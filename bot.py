@@ -71,8 +71,8 @@ def dialog(update: Update, context: CallbackContext) -> None:
             f"{result['fulfillment_text']}",
         )
         logger.info(f"Ответ пользователю {user_name}: {result['fulfillment_text']}")
-    except GoogleAPICallError as e:
-        logger.error(f"Ошибка при обработке сообщения от {user_name}: {e}")
+    except GoogleAPICallError as error:
+        logger.error(f"Ошибка при обработке сообщения от {user_name}: {error}")
         update.message.reply_text("Произошла ошибка при обработке сообщения")
 
 
