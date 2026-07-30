@@ -46,7 +46,7 @@ def create_intent_from_json(intents_file_path: str) -> None:
         # Ответ
         answer_text = intent_details["answer"]
         reply_message = dialogflow.Intent.Message(
-            text=dialogflow.Intent.Message.Text(text=answer_text)
+            text=dialogflow.Intent.Message.Text(text=[answer_text])
         )
 
         intent_to_create = dialogflow.Intent(
