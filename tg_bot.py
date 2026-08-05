@@ -1,8 +1,7 @@
 import logging
 import os
 
-from google.api_core.exceptions import GoogleAPICallError
-from telegram import Update
+from telegram import Bot, Update
 from telegram.ext import (
     CallbackContext,
     CommandHandler,
@@ -15,6 +14,7 @@ from dialogflow import detect_intent_text
 
 PROJECT_ID = os.getenv("PROJECT_ID")
 TG_BOT_TOKEN = os.getenv("TG_BOT_TOKEN")
+ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
 LANGUAGE_CODE = "ru"
 
 logging.basicConfig(
@@ -22,6 +22,37 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+
+
+class TelegramLogHandler(logging.Handler):
+    def __init__(self, bot: Bot, chat_id: str):
+        super().__init__()
+        self.bot = bot
+        self.chat_id = chat_id
+
+    def emit(self, record):
+        message = self.format(record)
+        self.bot.send_message(chat_id=self.chat_id, text=message[:4096])
+
+
+def setup_telegram_logging() -> None:
+    """Загрузка логгера для отправки в тг"""
+    if not (TG_BOT_TOKEN and ADMIN_CHAT_ID):
+        logger.info("Telegram-логирование отключено")
+        return
+
+    telegram_bot = Bot(TG_BOT_TOKEN)
+
+    telegram_handler = TelegramLogHandler(
+        telegram_bot,
+        ADMIN_CHAT_ID,
+    )
+    telegram_handler.setLevel(logging.ERROR)
+    telegram_handler.setFormatter(
+        logging.Formatter("%(asctime)s\n%(levelname)s\n%(message)s")
+    )
+
+    logger.addHandler(telegram_handler)
 
 
 def start(update: Update, context: CallbackContext) -> None:
@@ -55,12 +86,13 @@ def dialog(update: Update, context: CallbackContext) -> None:
             )
             logger.info(f"Ответ пользователю {user_id}: {result['fulfillment_text']}")
 
-    except GoogleAPICallError as error:
-        logger.error(f"Ошибка при обработке сообщения от {user_id}: {error}")
+    except Exception as error:
+        logger.exception(f"Ошибка при обработке сообщения от {user_id}: {error}")
         update.message.reply_text("Произошла ошибка при обработке сообщения")
 
 
 def main():
+    setup_telegram_logging()
     bot_token = TG_BOT_TOKEN
     updater = Updater(bot_token)
 
