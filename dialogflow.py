@@ -87,7 +87,8 @@ if __name__ == "__main__":
         level=logging.INFO,
     )
     project_id = os.getenv("PROJECT_ID")
+    intents_file_path = os.getenv("INTENTS_FILE_PATH", default="intents_data.json")
     try:
-        create_intent_from_json(project_id, "intents_data.json")
+        create_intent_from_json(project_id, intents_file_path)
     except Exception as error:
         logger.exception(f"Ошибка создания intent: {error}")
