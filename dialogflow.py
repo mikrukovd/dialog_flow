@@ -73,15 +73,12 @@ def create_intent_from_json(project_id: str, intents_file_path: str) -> None:
             messages=[reply_message],
         )
 
-        try:
-            created_intent = dialogflow_client.create_intent(
-                request={"parent": agent_resource_path, "intent": intent_to_create}
-            )
-            logger.info(
-                f"Создан intent {created_intent.display_name} (ID: {created_intent.name})"
-            )
-        except Exception as error:
-            logger.error(f"Ошибка создания intent {intent_display_name}: {error}")
+        created_intent = dialogflow_client.create_intent(
+            request={"parent": agent_resource_path, "intent": intent_to_create}
+        )
+        logger.info(
+            f"Создан intent {created_intent.display_name} (ID: {created_intent.name})"
+        )
 
 
 if __name__ == "__main__":
@@ -90,4 +87,7 @@ if __name__ == "__main__":
         level=logging.INFO,
     )
     project_id = os.getenv("PROJECT_ID")
-    create_intent_from_json(project_id, "intents_data.json")
+    try:
+        create_intent_from_json(project_id, "intents_data.json")
+    except Exception as error:
+        logger.exception(f"Ошибка создания intent: {error}")
