@@ -62,7 +62,7 @@ def handle_message(project_id: str, update: Update, context: CallbackContext) ->
     try:
         result = detect_intent_text(
             project_id=project_id,
-            session_id=str(user_id),
+            session_id=f"tg-{user_id}",
             text=update.message.text,
             language_code="ru",
         )

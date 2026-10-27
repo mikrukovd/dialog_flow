@@ -51,7 +51,7 @@ def handle_message(event, vk_api, project_id: str) -> None:
     try:
         result = detect_intent_text(
             project_id=project_id,
-            session_id=str(user_id),
+            session_id=f"vk-{user_id}",
             text=user_text,
             language_code="ru",
         )
