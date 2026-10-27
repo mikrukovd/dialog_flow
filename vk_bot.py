@@ -8,16 +8,6 @@ from vk_api.longpoll import VkEventType, VkLongPoll
 
 from dialogflow import detect_intent_text
 
-PROJECT_ID = os.getenv("PROJECT_ID")
-VK_GROUP_TOKEN = os.getenv("VK_GROUP_TOKEN")
-ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
-TG_BOT_TOKEN = os.getenv("TG_BOT_TOKEN")
-LANGUAGE_CODE = "ru"
-
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
-
 logger = logging.getLogger(__name__)
 
 
@@ -32,17 +22,17 @@ class TelegramLogHandler(logging.Handler):
         self.bot.send_message(chat_id=self.chat_id, text=message[:4096])
 
 
-def setup_telegram_logging() -> None:
+def setup_telegram_logging(tg_bot_token: str, admin_chat_id: str) -> None:
     """Загрузка логгера для отправки в тг"""
-    if not (TG_BOT_TOKEN and ADMIN_CHAT_ID):
+    if not (tg_bot_token and admin_chat_id):
         logger.info("Telegram-логирование отключено")
         return
 
-    telegram_bot = Bot(TG_BOT_TOKEN)
+    telegram_bot = Bot(tg_bot_token)
 
     telegram_handler = TelegramLogHandler(
         telegram_bot,
-        ADMIN_CHAT_ID,
+        admin_chat_id,
     )
     telegram_handler.setLevel(logging.ERROR)
     telegram_handler.setFormatter(
@@ -52,7 +42,7 @@ def setup_telegram_logging() -> None:
     logger.addHandler(telegram_handler)
 
 
-def dialog(event, vk_api) -> None:
+def dialog(event, vk_api, project_id: str) -> None:
     """Обрабатывает текстовое сообщение и отвечает через DialogFlow"""
     user_id = event.user_id
     user_text = event.text
@@ -60,10 +50,10 @@ def dialog(event, vk_api) -> None:
     logger.info(f"Получено сообщение от пользователя {user_id}: {user_text}")
     try:
         result = detect_intent_text(
-            project_id=PROJECT_ID,
+            project_id=project_id,
             session_id=str(user_id),
             text=user_text,
-            language_code=LANGUAGE_CODE,
+            language_code="ru",
         )
         logger.info(
             f"Интент {result['intent_name']} уверенность {result['confidence']}"
@@ -83,12 +73,21 @@ def dialog(event, vk_api) -> None:
 
 
 if __name__ == "__main__":
-    setup_telegram_logging()
+    logging.basicConfig(
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        level=logging.INFO,
+    )
+    project_id = os.getenv("PROJECT_ID")
+    vk_group_token = os.getenv("VK_GROUP_TOKEN")
+    admin_chat_id = os.getenv("ADMIN_CHAT_ID")
+    tg_bot_token = os.getenv("TG_BOT_TOKEN")
 
-    vk_session = vk.VkApi(token=VK_GROUP_TOKEN)
+    setup_telegram_logging(tg_bot_token, admin_chat_id)
+
+    vk_session = vk.VkApi(token=vk_group_token)
     vk_api = vk_session.get_api()
     longpoll = VkLongPoll(vk_session)
 
     for event in longpoll.listen():
         if event.type == VkEventType.MESSAGE_NEW and event.to_me:
-            dialog(event, vk_api)
+            dialog(event, vk_api, project_id)

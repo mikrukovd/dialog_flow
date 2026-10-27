@@ -1,3 +1,4 @@
+import functools
 import logging
 import os
 
@@ -11,15 +12,6 @@ from telegram.ext import (
 )
 
 from dialogflow import detect_intent_text
-
-PROJECT_ID = os.getenv("PROJECT_ID")
-TG_BOT_TOKEN = os.getenv("TG_BOT_TOKEN")
-ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
-LANGUAGE_CODE = "ru"
-
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
 
 logger = logging.getLogger(__name__)
 
@@ -35,17 +27,17 @@ class TelegramLogHandler(logging.Handler):
         self.bot.send_message(chat_id=self.chat_id, text=message[:4096])
 
 
-def setup_telegram_logging() -> None:
+def setup_telegram_logging(tg_bot_token: str, admin_chat_id: str) -> None:
     """Загрузка логгера для отправки в тг"""
-    if not (TG_BOT_TOKEN and ADMIN_CHAT_ID):
+    if not (tg_bot_token and admin_chat_id):
         logger.info("Telegram-логирование отключено")
         return
 
-    telegram_bot = Bot(TG_BOT_TOKEN)
+    telegram_bot = Bot(tg_bot_token)
 
     telegram_handler = TelegramLogHandler(
         telegram_bot,
-        ADMIN_CHAT_ID,
+        admin_chat_id,
     )
     telegram_handler.setLevel(logging.ERROR)
     telegram_handler.setFormatter(
@@ -61,7 +53,7 @@ def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text("Бот запущен")
 
 
-def dialog(update: Update, context: CallbackContext) -> None:
+def dialog(project_id: str, update: Update, context: CallbackContext) -> None:
     """Обрабатывает текстовое сообщение и отвечает через DialogFlow"""
     user_id = update.effective_user.id
     user_text = update.message.text
@@ -69,10 +61,10 @@ def dialog(update: Update, context: CallbackContext) -> None:
     logger.info(f"Получено сообщение от пользователя {user_id}: {user_text}")
     try:
         result = detect_intent_text(
-            project_id=PROJECT_ID,
+            project_id=project_id,
             session_id=str(user_id),
             text=update.message.text,
-            language_code=LANGUAGE_CODE,
+            language_code="ru",
         )
         logger.info(
             f"Интент {result['intent_name']} уверенность {result['confidence']}"
@@ -92,13 +84,24 @@ def dialog(update: Update, context: CallbackContext) -> None:
 
 
 def main():
-    setup_telegram_logging()
-    bot_token = TG_BOT_TOKEN
-    updater = Updater(bot_token)
+    logging.basicConfig(
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        level=logging.INFO,
+    )
+    project_id = os.getenv("PROJECT_ID")
+    tg_bot_token = os.getnev("TG_BOT_TOKEN")
+    admin_chat_id = os.getenv("ADMIN_CHAT_ID")
 
+    setup_telegram_logging(tg_bot_token, admin_chat_id)
+
+    updater = Updater(tg_bot_token)
     dispatcher = updater.dispatcher
     dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, dialog))
+    dispatcher.add_handler(
+        MessageHandler(
+            Filters.text & ~Filters.command, functools.partial(dialog, project_id)
+        )
+    )
 
     updater.start_polling()
     updater.idle()

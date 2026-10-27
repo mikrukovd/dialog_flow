@@ -4,11 +4,6 @@ import os
 
 from google.cloud import dialogflow
 
-PROJECT_ID = os.getenv("PROJECT_ID")
-
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
 logger = logging.getLogger(__name__)
 
 
@@ -37,7 +32,7 @@ def detect_intent_text(
     }
 
 
-def create_intent_from_json(intents_file_path: str) -> None:
+def create_intent_from_json(project_id: str, intents_file_path: str) -> None:
     """
     Создаёт Intent на основе JSON-файла.
 
@@ -54,10 +49,9 @@ def create_intent_from_json(intents_file_path: str) -> None:
 
     dialogflow_client = dialogflow.IntentsClient()
 
-    agent_resource_path = f"projects/{PROJECT_ID}/locations/global/agent"
+    agent_resource_path = f"projects/{project_id}/locations/global/agent"
 
     for intent_display_name, intent_details in intents_data.items():
-        # Обучающие фразы
         training_phrase_objects = []
         for question_text in intent_details.get("questions", []):
             training_phrase_part = dialogflow.Intent.TrainingPhrase.Part(
@@ -68,7 +62,6 @@ def create_intent_from_json(intents_file_path: str) -> None:
             )
             training_phrase_objects.append(training_phrase_object)
 
-        # Ответ
         answer_text = intent_details["answer"]
         reply_message = dialogflow.Intent.Message(
             text=dialogflow.Intent.Message.Text(text=[answer_text])
@@ -92,4 +85,9 @@ def create_intent_from_json(intents_file_path: str) -> None:
 
 
 if __name__ == "__main__":
-    create_intent_from_json("intents_data.json")
+    logging.basicConfig(
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        level=logging.INFO,
+    )
+    project_id = os.getenv("PROJECT_ID")
+    create_intent_from_json(project_id, "intents_data.json")
