@@ -42,7 +42,7 @@ def setup_telegram_logging(tg_bot_token: str, admin_chat_id: str) -> None:
     logger.addHandler(telegram_handler)
 
 
-def dialog(event, vk_api, project_id: str) -> None:
+def handle_message(event, vk_api, project_id: str) -> None:
     """Обрабатывает текстовое сообщение и отвечает через DialogFlow"""
     user_id = event.user_id
     user_text = event.text
@@ -90,4 +90,4 @@ if __name__ == "__main__":
 
     for event in longpoll.listen():
         if event.type == VkEventType.MESSAGE_NEW and event.to_me:
-            dialog(event, vk_api, project_id)
+            handle_message(event, vk_api, project_id)

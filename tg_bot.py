@@ -53,7 +53,7 @@ def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text("Бот запущен")
 
 
-def dialog(project_id: str, update: Update, context: CallbackContext) -> None:
+def handle_message(project_id: str, update: Update, context: CallbackContext) -> None:
     """Обрабатывает текстовое сообщение и отвечает через DialogFlow"""
     user_id = update.effective_user.id
     user_text = update.message.text
@@ -99,7 +99,8 @@ def main():
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(
         MessageHandler(
-            Filters.text & ~Filters.command, functools.partial(dialog, project_id)
+            Filters.text & ~Filters.command,
+            functools.partial(handle_message, project_id),
         )
     )
 
