@@ -89,7 +89,7 @@ def main():
         level=logging.INFO,
     )
     project_id = os.getenv("PROJECT_ID")
-    tg_bot_token = os.getnev("TG_BOT_TOKEN")
+    tg_bot_token = os.getenv("TG_BOT_TOKEN")
     admin_chat_id = os.getenv("ADMIN_CHAT_ID")
 
     setup_telegram_logging(tg_bot_token, admin_chat_id)
